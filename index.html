@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EBB Dijital Medya Dönüşümü</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161c2d;
+    --border: #1e2840;
+    --accent: #3b82f6;
+    --accent2: #8b5cf6;
+    --accent3: #06b6d4;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 500;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* LOGIN */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 50%, #0f1a3a 0%, #0a0d14 60%);
+    padding: 20px;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+  .login-logo { font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 4px; color: #ffffff; text-transform: uppercase; margin-bottom: 8px; }
+  .login-title { font-family: 'Barlow', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 4px; color: #ffffff; }
+  .login-sub { font-size: 13px; color: #94a3b8; margin-bottom: 32px; }
+  .login-input-wrap { text-align: left; margin-bottom: 14px; }
+  .login-input-label { display: block; font-size: 12px; font-weight: 700; color: #94a3b8; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; font-family: 'Barlow', sans-serif; }
+  .login-box input {
+    width: 100%; padding: 14px 16px;
+    background: #0d1422; border: 1.5px solid #2d3f60;
+    border-radius: 10px; color: #ffffff; font-size: 15px;
+    font-family: 'Barlow', sans-serif; font-weight: 500;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .login-box input::placeholder { color: #475569; }
+  .login-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.2); }
+  .btn-login {
+    width: 100%; padding: 14px; background: var(--accent);
+    border: none; border-radius: 10px; color: #fff; font-weight: 700;
+    font-size: 15px; cursor: pointer; font-family: 'Barlow', sans-serif;
+    transition: opacity .2s; margin-top: 4px; letter-spacing: .3px;
+  }
+  .btn-login:hover { opacity: .85; }
+  .btn-login:active { opacity: .7; }
+  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; font-weight: 600; }
+  .login-demo { font-size: 11px; color: #334155; margin-top: 16px; }
+
+  /* APP */
+  #app { display: none; }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 24px; }
+  .logo { font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 1px; color: #ffffff; }
+  .logo span { color: #93c5fd; }
+  .logo span { color: var(--accent); }
+  nav { display: flex; gap: 4px; }
+  .nav-btn {
+    padding: 7px 16px; border-radius: 8px; border: none;
+    background: transparent; color: var(--text2); font-size: 13px;
+    cursor: pointer; font-family: 'Barlow', sans-serif; transition: all .2s;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: var(--accent); color: #fff; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .user-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; background: var(--surface2);
+    border-radius: 8px; font-size: 13px; color: var(--text2);
+  }
+  .user-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .btn-logout { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-size: 12px; cursor: pointer; font-family: 'Barlow', sans-serif; }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* MAIN */
+  main { padding: 32px; max-width: 1600px; margin: 0 auto; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* UPLOAD AREA */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(59,130,246,.05); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-zone h3 { font-family: 'Barlow', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--text2); }
+  .upload-hint { font-size: 11px; color: var(--text3); margin-top: 8px; }
+
+  /* FILTERS */
+  .filters {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center;
+  }
+  .filter-label { font-size: 12px; color: var(--text3); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  select, .filter-btn {
+    padding: 8px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px;
+    cursor: pointer; font-family: 'Barlow', sans-serif;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+  .filter-btn { transition: all .2s; }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+    transition: border-color .2s;
+  }
+  .kpi-card:hover { border-color: var(--accent); }
+  .kpi-label { font-size: 11px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-family: 'Barlow', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .kpi-sub { font-size: 12px; color: var(--text2); }
+  .kpi-card.accent { border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.06); }
+  .kpi-card.accent .kpi-value { color: var(--accent); }
+  .kpi-card.green { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.06); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.purple { border-color: rgba(139,92,246,.4); background: rgba(139,92,246,.06); }
+  .kpi-card.purple .kpi-value { color: var(--accent2); }
+  .kpi-card.cyan { border-color: rgba(6,182,212,.4); background: rgba(6,182,212,.06); }
+  .kpi-card.cyan .kpi-value { color: var(--accent3); }
+
+  /* CHARTS ROW */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .charts-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .chart-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px;
+  }
+  .chart-box.full { grid-column: 1 / -1; }
+  .chart-title { font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+  canvas { max-height: 280px; }
+
+  /* TABLE */
+  .table-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 28px;
+  }
+  .table-header {
+    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-header-left h3 { font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; }
+  .table-header-left p { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .table-actions { display: flex; gap: 8px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    padding: 12px 16px; text-align: left; font-size: 11px;
+    color: var(--text3); letter-spacing: .5px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border); font-weight: 600;
+    background: var(--surface2); cursor: pointer; white-space: nowrap;
+  }
+  th:hover { color: var(--text); }
+  td { padding: 11px 16px; border-bottom: 1px solid rgba(30,40,64,.6); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59,130,246,.04); }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-ig { background: rgba(225,48,108,.15); color: #e1306c; }
+  .badge-fb { background: rgba(24,119,242,.15); color: #1877f2; }
+  .badge-tt { background: rgba(255,255,255,.1); color: #e2e8f0; }
+  .badge-yt { background: rgba(255,0,0,.15); color: #ff0000; }
+  .badge-x  { background: rgba(255,255,255,.1); color: #94a3b8; }
+  .er-cell { font-weight: 700; }
+  .er-high { color: var(--green); }
+  .er-mid  { color: var(--yellow); }
+  .er-low  { color: var(--red); }
+
+  /* PLATFORM BADGES */
+  .plat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+  /* RANKING */
+  .rank-num { font-family: 'Barlow', sans-serif; font-weight: 800; color: var(--text3); font-size: 18px; }
+  .rank-num.top { color: var(--accent); }
+
+  /* VIDEO SPLIT */
+  .video-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .split-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  .split-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .split-header span { font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; }
+  .split-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .tag-short { background: rgba(16,185,129,.15); color: var(--green); }
+  .tag-long  { background: rgba(139,92,246,.15); color: var(--accent2); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 80px 40px;
+    color: var(--text3);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+  .empty-state h3 { font-family: 'Barlow', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text2); }
+  .empty-state p { font-size: 14px; }
+
+  /* PDF BUTTON */
+  .btn-pdf {
+    padding: 10px 20px; background: var(--green); border: none;
+    border-radius: 8px; color: #fff; font-weight: 600; font-size: 13px;
+    cursor: pointer; font-family: 'Barlow', sans-serif; transition: opacity .2s;
+  }
+  .btn-pdf:hover { opacity: .85; }
+  .btn-primary {
+    padding: 10px 20px; background: var(--accent); border: none;
+    border-radius: 8px; color: #fff; font-weight: 600; font-size: 13px;
+    cursor: pointer; font-family: 'Barlow', sans-serif; transition: opacity .2s;
+  }
+
+  /* CATEGORY BREAKDOWN */
+  .cat-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(30,40,64,.4); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .cat-bar-wrap { flex: 2; background: var(--bg); border-radius: 4px; height: 6px; overflow: hidden; }
+  .cat-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width .6s ease; }
+  .cat-er { font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 14px; color: var(--accent); width: 70px; text-align: right; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .charts-row, .charts-row.three, .video-split { grid-template-columns: 1fr; }
+    .chart-box.full { grid-column: 1; }
+    main { padding: 16px; }
+    header { padding: 0 16px; }
+  }
+
+  /* THUMBNAIL */
+  .thumb-cell { display: flex; align-items: center; gap: 10px; }
+  .thumb-wrap {
+    position: relative; width: 48px; height: 48px; border-radius: 8px;
+    overflow: hidden; flex-shrink: 0; background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-wrap .thumb-play {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.35); font-size: 14px; opacity: 0; transition: opacity .2s;
+  }
+  .thumb-wrap:hover .thumb-play { opacity: 1; }
+  .thumb-link { text-decoration: none; }
+  .thumb-placeholder { width: 48px; height: 48px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .thumb-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .thumb-desc { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .thumb-link-small { font-size: 10px; color: var(--accent); text-decoration: none; opacity: .7; }
+  .thumb-link-small:hover { opacity: 1; text-decoration: underline; }
+  /* PRINT */
+  @media print {
+    header, .upload-zone, .filters, .table-actions, nav, .btn-pdf, .btn-primary { display: none !important; }
+    .pdf-link-badge { display: inline; }
+    .thumb-wrap { display: none; }
+    .thumb-placeholder { display: none; }
+  }
+
+  .tag-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 13px; margin: 4px;
+  }
+  .tag-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; line-height:1; padding:0; }
+  .tag-del:hover { color: var(--red); }
+  /* EDIT TABLE SELECTS */
+  .edit-select {
+    width: 100%; padding: 6px 10px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 12px; font-family: 'Barlow', sans-serif;
+    cursor: pointer;
+  }
+  .edit-select:focus { outline: none; border-color: var(--accent); }
+  .edit-select.changed { border-color: var(--accent); background: rgba(59,130,246,.1); }
+
+  /* HAMBURGER MENU */
+  .hamburger {
+    display: none; flex-direction: column; gap: 5px; cursor: pointer;
+    padding: 8px; border: none; background: transparent;
+  }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: all .3s; }
+  .mobile-nav {
+    display: none; position: fixed; top: 56px; left: 0; right: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 8px; z-index: 999; flex-direction: column; gap: 2px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  .mobile-nav.open { display: flex; }
+  .mobile-nav .nav-btn {
+    text-align: left; padding: 14px 16px; font-size: 15px;
+    border-radius: 8px; width: 100%; cursor: pointer;
+    pointer-events: all; touch-action: manipulation;
+  }
+
+  /* MULTI-SELECT HESAP */
+  .account-dropdown { position: relative; display: inline-block; }
+  .account-btn {
+    padding: 8px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer;
+    font-family: 'Barlow', sans-serif; font-weight: 600; min-width: 120px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .account-btn:hover { border-color: var(--accent); }
+  .account-menu {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px; z-index: 200; min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .account-menu.open { display: block; }
+  .account-menu label {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text);
+    transition: background .15s; white-space: nowrap;
+  }
+  .account-menu label:hover { background: var(--surface2); }
+  .account-menu input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+  .account-menu .menu-divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .account-badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    border-radius: 10px; font-size: 11px; font-weight: 700; padding: 1px 7px; margin-left: 4px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 20px; font-size: 13px;
+    z-index: 1000; transition: opacity .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.hide { opacity: 0; }
+
+  /* RESPONSIVE — MOBİL */
+  @media (max-width: 768px) {
+    .login-box { padding: 36px 24px; border-radius: 20px; }
+    .login-title { font-size: 22px; }
+    header { padding: 0 16px; height: 56px; }
+    .header-left nav { display: none; }
+    .hamburger { display: flex; }
+    main { padding: 12px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-value { font-size: 22px; }
+    .charts-row, .charts-row.three, .video-split { grid-template-columns: 1fr; }
+    .chart-box.full { grid-column: 1; }
+    .table-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .table-actions { flex-wrap: wrap; gap: 6px; }
+    th, td { padding: 8px 10px; font-size: 12px; }
+    .thumb-desc { max-width: 120px; font-size: 11px; }
+    .filters { gap: 6px; flex-wrap: wrap; }
+    .logo span { display: none; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">EBB</div>
+    <h1 class="login-title">Dijital Medya Dönüşümü</h1>
+    <p class="login-sub">Yetkili giriş gereklidir</p>
+    <div class="login-input-wrap">
+      <label class="login-input-label" for="loginUser">Kullanıcı Adı</label>
+      <input type="text" id="loginUser" placeholder="Kullanıcı adınızı girin" autocomplete="username" />
+    </div>
+    <div class="login-input-wrap">
+      <label class="login-input-label" for="loginPass">Şifre</label>
+      <input type="password" id="loginPass" placeholder="Şifrenizi girin" autocomplete="current-password" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">Giriş Yap →</button>
+    <div class="login-error" id="loginError">⚠️ Kullanıcı adı veya şifre hatalı.</div>
+    <p class="login-demo">Giriş için yöneticinizle iletişime geçin</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="logo">EBB <span>Dijital Medya Dönüşümü</span></div>
+      <nav>
+        <button class="nav-btn active" onclick="showSection('dashboard');closeMobileNav()">📊 Dashboard</button>
+        <button class="nav-btn" onclick="showSection('ranking');closeMobileNav()">🏆 Sıralama</button>
+        <button class="nav-btn" onclick="showSection('categories');closeMobileNav()">🏷️ Kategoriler</button>
+        <button class="nav-btn" onclick="showSection('videos');closeMobileNav()">🎬 Video Analiz</button>
+        <button class="nav-btn" onclick="showSection('table');closeMobileNav()">📋 Veri Tablosu</button>
+        <button class="nav-btn" onclick="showSection('upload');closeMobileNav()">⬆️ Veri Yükle</button>
+        <button class="nav-btn" onclick="showSection('edit');closeMobileNav()">✏️ Veri Düzenle</button>
+        <button class="nav-btn" onclick="showSection('settings');closeMobileNav()">⚙️ Ayarlar</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="user-badge"><div class="user-dot"></div><span id="currentUser">—</span></div>
+      <button id="headerSaveBtn" onclick="saveToStorage()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif;" title="Veriyi buluta kaydet">☁️ Kaydet</button>
+      <button class="btn-logout" onclick="doLogout()">Çıkış</button>
+      <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBİL MENÜ -->
+  <div class="mobile-nav" id="mobileNav">
+    <button class="nav-btn" onclick="showSection('dashboard');closeMobileNav()">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showSection('ranking');closeMobileNav()">🏆 Sıralama</button>
+    <button class="nav-btn" onclick="showSection('categories');closeMobileNav()">🏷️ Kategoriler</button>
+    <button class="nav-btn" onclick="showSection('videos');closeMobileNav()">🎬 Video Analiz</button>
+    <button class="nav-btn" onclick="showSection('table');closeMobileNav()">📋 Veri Tablosu</button>
+    <button class="nav-btn" id="mobileUpload" onclick="showSection('upload');closeMobileNav()">⬆️ Veri Yükle</button>
+    <button class="nav-btn" id="mobileEdit" onclick="showSection('edit');closeMobileNav()">✏️ Veri Düzenle</button>
+    <button class="nav-btn" id="mobileSettings" onclick="showSection('settings');closeMobileNav()">⚙️ Ayarlar</button>
+  </div>
+
+  <main>
+
+    <!-- UPLOAD -->
+    <div class="section active" id="sec-upload">
+
+      <!-- Mod seçimi -->
+      <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+        <span class="filter-label">Yükleme Modu:</span>
+        <button class="filter-btn active" id="modeReplace" onclick="setUploadMode('replace',this)">🔄 Sıfırla & Yükle</button>
+        <button class="filter-btn" id="modeMerge" onclick="setUploadMode('merge',this)">➕ Üstüne Ekle</button>
+        <span id="modeHint" style="font-size:12px;color:var(--text3);">Mevcut veriyi siler, yeni CSV'yi yükler</span>
+      </div>
+
+      <div class="upload-zone" id="dropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <input type="file" accept=".csv" onchange="handleFile(this.files[0])" />
+        <div class="upload-icon">📂</div>
+        <h3 id="uploadZoneTitle">CSV Dosyanızı Yükleyin</h3>
+        <p>Sürükleyip bırakın ya da tıklayın</p>
+        <div class="upload-hint">Desteklenen sütunlar: Tarih, Platform, İçerik Türü, Kategori, Format, Dil Tonu, İçerik Linki, Erişim, İzlenme, Beğeni, Yorum, Paylaşım, Kaydetme, Toplam Etkileşim, Ortalama İzlenme Süresi</div>
+      </div>
+      <div id="uploadStatus" style="text-align:center;color:var(--text2);font-size:14px;padding:16px;"></div>
+
+      <!-- Mevcut veri özeti -->
+      <div id="dataStats" style="display:none;" class="chart-box" style="max-width:700px;margin:0 auto 24px;">
+        <div class="chart-title">📊 Yüklü Veri Özeti</div>
+        <div id="dataStatsContent" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:12px;"></div>
+        <button onclick="clearAllData()" style="margin-top:16px;padding:8px 16px;border:1px solid var(--red);background:transparent;color:var(--red);border-radius:8px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;">🗑️ Tüm Veriyi Temizle</button>
+      </div>
+
+      <!-- Template download -->
+      <div class="chart-box" style="max-width:600px;margin:0 auto;">
+        <div class="chart-title">📥 CSV Şablonu</div>
+        <div class="chart-sub">Aşağıdaki başlıkları kullanarak CSV dosyanızı hazırlayın</div>
+        <div style="background:var(--bg);border-radius:8px;padding:16px;font-size:12px;color:var(--text2);font-family:monospace;line-height:2;overflow-x:auto;">
+          Tarih, Platform, İçerik Türü, Kategori, Format, Dil Tonu, İçerik Linki, Erişim, İzlenme, Beğeni, Yorum, Paylaşım, Kaydetme, Toplam Etkileşim, Ortalama İzlenme Süresi (sn)
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="downloadTemplate()">Şablonu İndir (.csv)</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="section" id="sec-dashboard">
+      <div class="filters">
+        <span class="filter-label">Dönem:</span>
+        <button class="filter-btn active" onclick="setRange('all',this)">Tüm Zamanlar</button>
+        <button class="filter-btn" onclick="setRange('monthly',this)">Aylık</button>
+        <select id="monthSelect" onchange="applyFilters()" style="display:none;">
+          <option value="">Ay Seçin</option>
+        </select>
+        <select id="yearSelect" onchange="applyFilters()">
+          <option value="">Tüm Yıllar</option>
+        </select>
+        <span class="filter-label" style="margin-left:8px;">Platform:</span>
+        <select id="platformFilter" onchange="applyFilters()">
+          <option value="">Tümü</option>
+          <option>Instagram</option>
+          <option>Facebook</option>
+          <option>TikTok</option>
+          <option>YouTube</option>
+          <option>X</option>
+        </select>
+        <span class="filter-label" style="margin-left:8px;">Hesap:</span>
+        <select id="accountFilter" onchange="applyFilters()">
+          <option value="">Tümü</option>
+        </select>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">Aylık Etkileşim Oranı Trendi</div>
+          <div class="chart-sub">Erişim Bazlı Etkileşim Oranı (%)</div>
+          <canvas id="erTrendChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Platform Dağılımı</div>
+          <div class="chart-sub">Toplam Etkileşim'e göre</div>
+          <canvas id="platformChart"></canvas>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">📅 Aylık Kategori ER Oranları</div>
+          <div class="chart-sub" id="catChartMonthSub">Seçili döneme göre</div>
+          <canvas id="catBarMonthly" style="max-height:320px;"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">📊 Güncel Toplam Kategori ER</div>
+          <div class="chart-sub">Tüm zamanlar kümülatif</div>
+          <canvas id="catBarAll" style="max-height:320px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="section" id="sec-ranking">
+      <div class="filters">
+        <span class="filter-label">Dönem:</span>
+        <select id="rankMonth" onchange="renderRanking()">
+          <option value="">Tümü</option>
+        </select>
+        <span class="filter-label" style="margin-left:8px;">Platform:</span>
+        <select id="rankPlatform" onchange="renderRanking()">
+          <option value="">Tümü</option>
+          <option>Instagram</option>
+          <option>Facebook</option>
+          <option>TikTok</option>
+          <option>YouTube</option>
+          <option>X</option>
+        </select>
+        <span class="filter-label" style="margin-left:8px;">İçerik Türü:</span>
+        <select id="rankTur" onchange="renderRanking()">
+          <option value="">Tümü</option>
+          <option>Reels</option>
+          <option>Carousel</option>
+          <option>Fotoğraf</option>
+          <option>Video</option>
+        </select>
+        <span class="filter-label" style="margin-left:8px;">Hesap:</span>
+        <div class="account-dropdown" id="accountDropdown">
+          <button class="account-btn" onclick="toggleAccountMenu(event)" id="accountBtn">
+            <span id="accountBtnLabel">Tümü</span> <span>▾</span>
+          </button>
+          <div class="account-menu" id="accountMenu">
+            <label><input type="checkbox" id="acctAll" checked onchange="toggleAllAccounts(this)"> <b>Tümü</b></label>
+            <div class="menu-divider"></div>
+            <div id="accountCheckboxes"></div>
+          </div>
+        </div>
+        <span class="filter-label" style="margin-left:8px;">Kategori:</span>
+        <select id="rankKategori" onchange="renderRanking()">
+          <option value="">Tümü</option>
+        </select>
+      </div>
+      <div class="filters" style="margin-top:-8px;">
+        <span class="filter-label">Birincil Sıra:</span>
+        <button class="filter-btn active" id="rankByER" onclick="setRankBy('ER',this)">ER % ↓</button>
+        <button class="filter-btn" id="rankByErisim" onclick="setRankBy('Erişim',this)">Erişim ↓</button>
+        <button class="filter-btn" id="rankByEtk" onclick="setRankBy('Etkileşim',this)">Etkileşim ↓</button>
+        <span class="filter-label" style="margin-left:8px;">İkincil Sıra:</span>
+        <button class="filter-btn active" id="secRankIzlenme" onclick="setSecMetric('İzlenme',this)">İzlenme</button>
+        <button class="filter-btn" id="secRankYorum" onclick="setSecMetric('Yorum',this)">Yorum</button>
+      </div>
+      <div class="table-box">
+        <div class="table-header">
+          <div class="table-header-left">
+            <h3>İçerik Sıralaması</h3>
+            <p id="rankCount">—</p>
+          </div>
+          <button class="btn-pdf" onclick="exportPDF()">📄 PDF Rapor</button>
+        </div>
+        <div class="table-wrap"><table id="rankTable"><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section" id="sec-categories">
+      <div class="filters">
+        <span class="filter-label">Aylık Görünüm:</span>
+        <select id="catMonth" onchange="renderCategories()">
+          <option value="">Tüm Zamanlar</option>
+        </select>
+      </div>
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">📅 Seçilen Dönem — Kategori ER</div>
+          <div class="chart-sub">Seçili aya göre etkileşim oranı (%)</div>
+          <div id="catBreakdown"></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">📊 Güncel Toplam — Kategori ER</div>
+          <div class="chart-sub">Tüm zamanlar kümülatif etkileşim oranı (%)</div>
+          <div id="catBreakdownAll"></div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">Kategori Dağılımı</div>
+          <div class="chart-sub">İçerik sayısına göre</div>
+          <canvas id="catChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Kategori Detayları</div>
+          <div class="chart-sub">Seçili döneme göre</div>
+          <div class="table-wrap"><table id="catTable"><tbody></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEOS -->
+    <div class="section" id="sec-videos">
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#f59e0b;">
+        ⚠️ <b>Ortalama izlenme süresi</b> bu Instagram CSV formatında bulunmuyor. Meta Business Suite'ten "Reels İçgörüleri" raporu indirirseniz o sütunu da gösterebiliriz.
+      </div>
+      <div class="video-split">
+        <div class="split-box">
+          <div class="split-header">
+            <div class="split-tag tag-short">⚡ Kısa</div>
+            <span>10 Saniye Altı Videolar</span>
+          </div>
+          <div class="table-wrap"><table id="shortTable"><tbody></tbody></table></div>
+        </div>
+        <div class="split-box">
+          <div class="split-header">
+            <div class="split-tag tag-long">🎬 Uzun</div>
+            <span>10 Saniye Üstü Videolar</span>
+          </div>
+          <div class="table-wrap"><table id="longTable"><tbody></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="section" id="sec-table">
+      <div class="table-box">
+        <div class="table-header">
+          <div class="table-header-left">
+            <h3>Tüm Veriler</h3>
+            <p id="tableCount">—</p>
+          </div>
+          <div class="table-actions">
+            <select id="tableMonth" onchange="renderMainTable()">
+              <option value="">Tüm Aylar</option>
+            </select>
+            <select id="tableSortCol" onchange="renderMainTable()">
+              <option value="_date">Tarih</option>
+              <option value="_erisim">Erişim</option>
+              <option value="_izlenme">İzlenme</option>
+              <option value="_begeni">Beğeni</option>
+              <option value="_yorum">Yorum</option>
+              <option value="_paylasim">Paylaşım</option>
+              <option value="_kaydetme">Kaydetme</option>
+              <option value="_etkilesim">Etkileşim</option>
+              <option value="_er">ER %</option>
+              <option value="_sure">Süre</option>
+            </select>
+            <button class="filter-btn active" id="tableSortDir" onclick="toggleTableSort(this)">↓ Büyükten Küçüğe</button>
+            <button class="btn-pdf" onclick="exportPDF()">📄 PDF Rapor İndir</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="mainTable"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- EDIT DATA -->
+    <div class="section" id="sec-edit">
+      <div class="table-box">
+        <div class="table-header">
+          <div class="table-header-left">
+            <h3>✏️ Veri Düzenle</h3>
+            <p>Her satır için Kategori ve Dil Tonu'nu dropdown'dan seçin</p>
+          </div>
+          <div class="table-actions">
+            <select id="editMonth" onchange="renderEditTable()">
+              <option value="">Tüm Aylar</option>
+            </select>
+            <button class="btn-primary" onclick="applyEdits()">✅ Değişiklikleri Uygula</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="editTable">
+            <thead><tr>
+              <th>#</th><th>Tarih & Gün</th><th>İçerik (3 kelime)</th><th>Platform</th><th>Tür</th>
+              <th style="min-width:140px;">Kategori</th>
+              <th style="min-width:140px;">Dil Tonu</th>
+              <th style="min-width:140px;">Format</th>
+              <th style="width:90px;">Süre (sn.)</th>
+              <th>Erişim</th><th>ER %</th>
+            </tr></thead>
+            <tbody id="editTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;max-width:1200px;">
+
+        <!-- KATEGORİLER -->
+        <div class="chart-box">
+          <div class="chart-title">🏷️ Kategori Listesi</div>
+          <div class="chart-sub">Panelde kullanılacak kategorileri buradan yönetin</div>
+          <div id="catList" style="margin-bottom:16px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input id="newCatInput" type="text" placeholder="Yeni kategori..." style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;" />
+            <button class="btn-primary" onclick="addCategory()">Ekle</button>
+          </div>
+        </div>
+
+        <!-- DİL TONU -->
+        <div class="chart-box">
+          <div class="chart-title">🗣️ Dil Tonu Listesi</div>
+          <div class="chart-sub">Panelde kullanılacak dil tonlarını buradan yönetin</div>
+          <div id="tonList" style="margin-bottom:16px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input id="newTonInput" type="text" placeholder="Yeni dil tonu..." style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;" />
+            <button class="btn-primary" onclick="addTon()">Ekle</button>
+          </div>
+        </div>
+
+        <!-- FORMAT -->
+        <div class="chart-box">
+          <div class="chart-title">📐 Format Listesi</div>
+          <div class="chart-sub">İçerik formatlarını buradan yönetin</div>
+          <div id="formatList" style="margin-bottom:16px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input id="newFormatInput" type="text" placeholder="Yeni format..." style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;" />
+            <button class="btn-primary" onclick="addFormat()">Ekle</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- KULLANICI YÖNETİMİ — sadece admin -->
+      <div id="userMgmtSection" style="margin-top:24px;max-width:1200px;display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+          <!-- ADMİN BİLGİLERİ -->
+          <div class="chart-box">
+            <div class="chart-title">👤 Admin Hesabı</div>
+            <div class="chart-sub">Yönetici kullanıcı adı ve şifresini değiştirin</div>
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Kullanıcı Adı</label>
+              <input id="adminUserInput" type="text" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;" />
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Yeni Şifre</label>
+              <input id="adminPassInput" type="password" placeholder="Boş bırakırsanız değişmez" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;" />
+            </div>
+            <button class="btn-primary" onclick="saveUserSettings('admin')">💾 Admin Bilgilerini Kaydet</button>
+          </div>
+
+          <!-- İZLEYİCİ BİLGİLERİ -->
+          <div class="chart-box">
+            <div class="chart-title">👥 İzleyici Hesabı</div>
+            <div class="chart-sub">Sadece görüntüleme yapabilir — veri yükleyemez, değiştiremez</div>
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Kullanıcı Adı</label>
+              <input id="viewerUserInput" type="text" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;" />
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Yeni Şifre</label>
+              <input id="viewerPassInput" type="password" placeholder="Boş bırakırsanız değişmez" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;" />
+            </div>
+            <button class="btn-primary" onclick="saveUserSettings('viewer')">💾 İzleyici Bilgilerini Kaydet</button>
+          </div>
+
+        </div>
+        <div style="margin-top:12px;padding:12px 16px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;font-size:12px;color:var(--yellow);">
+          ⚠️ Kullanıcı adı veya şifre değiştirdiğinizde sayfayı yenileyin ve yeni bilgilerle giriş yapın.
+        </div>
+      </div>
+
+      <div style="margin-top:20px;max-width:1200px;">
+        <div class="chart-box">
+          <div class="chart-title">ℹ️ Kullanım</div>
+          <div class="chart-sub" style="line-height:1.8;">
+            1. Önce bu sayfadan <b>Kategori</b>, <b>Dil Tonu</b> ve <b>Format</b> listelerinizi oluşturun.<br>
+            2. CSV dosyanızı <b>Veri Yükle</b> sekmesinden yükleyin. <b>İçerik Türü</b> (Reels, Carousel, Fotoğraf) otomatik gelir.<br>
+            3. <b>Veri Düzenle</b> sekmesine geçip her satır için Kategori, Dil Tonu ve Format'ı seçin.<br>
+            4. <b>Değişiklikleri Uygula</b> butonuna tıklayın — tüm grafikler güncellenir.<br><br>
+            <b>İçerik Türü</b> = Teknik format (Reels, Carousel, Fotoğraf) — CSV'den otomatik.<br>
+            <b>Format</b> = İçerik konsepti (Haber, Başkan Vlog, Trend...) — siz belirlersiniz.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+// ====== AUTH ======
+// Admin: her şeyi görür, veri yükler/düzenler
+// Viewer: sadece okuma sekmeleri — Dashboard, Sıralama, Kategoriler, Video Analiz, Veri Tablosu
+const USERS = {
+  admin:  { pass: '1234',       role: 'admin'  },
+  izleyici: { pass: 'ebb2025',  role: 'viewer' },
+};
+let currentUser = null;
+let currentRole = null;
+
+const VIEWER_TABS = ['dashboard','ranking','categories','videos','table'];
+const ADMIN_TABS  = ['dashboard','ranking','categories','videos','table','upload','edit','settings'];
+
+function applyRole(role) {
+  // Desktop nav
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    const match = onclick.match(/showSection\('(\w+)'\)/);
+    if (!match) return;
+    const section = match[1];
+    btn.style.display = (role === 'viewer' && !VIEWER_TABS.includes(section)) ? 'none' : '';
+  });
+  // Mobil nav admin butonları
+  ['mobileUpload','mobileEdit','mobileSettings'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = role === 'viewer' ? 'none' : '';
+  });
+  // Kaydet butonu sadece admin
+  const saveBtn = document.getElementById('headerSaveBtn');
+  if (saveBtn) saveBtn.style.display = role === 'admin' ? '' : 'none';
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  // Önce Supabase'den güncel kullanıcıları yükle, sonra kontrol et
+  sb.from('ayarlar').select('value').eq('key','kullanicilar').single()
+    .then(({ data }) => {
+      if (data && Array.isArray(data.value)) {
+        data.value.forEach(usr => { USERS[usr.u] = { pass: usr.p, role: usr.r }; });
+      }
+    })
+    .catch(() => {}) // Kayıt yoksa eski USERS ile devam et
+    .finally(() => {
+      const userData = USERS[u];
+      if (userData && userData.pass === p) {
+        currentUser = u;
+        currentRole = userData.role;
+        saveSession(u, userData.role);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('currentUser').textContent = u;
+        applyRole(currentRole);
+        loadFromStorage().then(hasData => {
+          if (hasData) {
+            populateSelects();
+            applyFilters();
+            updateDataStats();
+            renderMainTable();
+            showSection('dashboard');
+            showToast('📂 Veriler yüklendi (' + rawData.length + ' kayıt)');
+          } else {
+            showSection(currentRole === 'admin' ? 'upload' : 'dashboard');
+          }
+        });
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+}
+// Sayfa açılınca kullanıcıları Supabase'den yükle
+(async function initUsers() {
+  try {
+    const { data } = await sb.from('ayarlar').select('value').eq('key','kullanicilar').single();
+    if (data && Array.isArray(data.value)) {
+      data.value.forEach(u => { USERS[u.u] = { pass: u.p, role: u.r }; });
+    }
+  } catch(e) { /* İlk açılışta kayıt yoksa normal */ }
+})();
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Oturumu hatırla — sayfa yenilenince tekrar giriş isteme
+function saveSession(user, role) {
+  sessionStorage.setItem('ebb_session', JSON.stringify({ user, role }));
+}
+function clearSession() {
+  sessionStorage.removeItem('ebb_session');
+}
+function restoreSession() {
+  try {
+    const s = sessionStorage.getItem('ebb_session');
+    if (!s) return false;
+    const { user, role } = JSON.parse(s);
+    if (!user || !role) return false;
+    currentUser = user;
+    currentRole = role;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('currentUser').textContent = user;
+    applyRole(currentRole);
+    return true;
+  } catch(e) { return false; }
+}
+
+// Sayfa yüklenince önce oturumu kontrol et
+window.addEventListener('load', () => {
+  if (restoreSession()) {
+    loadFromStorage().then(hasData => {
+      if (hasData) {
+        populateSelects();
+        applyFilters();
+        updateDataStats();
+        renderMainTable();
+        showSection('dashboard');
+      } else {
+        showSection(currentRole === 'admin' ? 'upload' : 'dashboard');
+      }
+    });
+  }
+});
+function doLogout() {
+  clearSession();
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  currentUser = null;
+  currentRole = null;
+}
+
+// ====== NAV ======
+function showSection(id) {
+  // Viewer yetki kontrolü
+  if (currentRole === 'viewer' && !VIEWER_TABS.includes(id)) return;
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(b => { if (b.textContent.toLowerCase().includes(id.substring(0,4))) b.classList.add('active'); });
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'ranking') renderRanking();
+  if (id === 'categories') renderCategories();
+  if (id === 'videos') renderVideos();
+  if (id === 'table') renderMainTable();
+  if (id === 'edit') renderEditTable();
+  if (id === 'settings') renderSettings();
+}
+
+// ====== DATA ======
+let rawData = [];
+let filteredData = [];
+let rangeMode = 'all';
+let rankMetric = 'ER';  // always ER now
+let secMetric  = 'İzlenme';
+let charts = {};
+let uploadMode = 'replace';
+
+function setUploadMode(mode, btn) {
+  uploadMode = mode;
+  document.querySelectorAll('#sec-upload .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const hint = document.getElementById('modeHint');
+  const title = document.getElementById('uploadZoneTitle');
+  if (mode === 'merge') {
+    hint.textContent = 'Mevcut veriye yeni ayları ekler, aynı gönderiler güncellenir';
+    title.textContent = '➕ Üzerine Eklenecek CSV';
+  } else {
+    hint.textContent = "Mevcut veriyi siler, yeni CSV'yi yükler";
+    title.textContent = 'CSV Dosyanızı Yükleyin';
+  }
+}
+
+function clearAllData() {
+  if (!confirm('Tüm yüklü veri silinecek. Emin misiniz?')) return;
+  rawData = []; filteredData = [];
+  document.getElementById('uploadStatus').textContent = '';
+  updateDataStats();
+  clearStorage();
+  showToast('🗑️ Veri temizlendi');
+}
+
+function updateDataStats() {
+  if (!rawData.length) { document.getElementById('dataStats').style.display = 'none'; return; }
+  document.getElementById('dataStats').style.display = 'block';
+  const months = [...new Set(rawData.map(r => r._monthKey))].sort();
+  const platforms = [...new Set(rawData.map(r => r._platform))];
+  const minD = rawData.reduce((m,r) => r._date < m ? r._date : m, rawData[0]._date);
+  const maxD = rawData.reduce((m,r) => r._date > m ? r._date : m, rawData[0]._date);
+  document.getElementById('dataStatsContent').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Toplam Kayıt</div><div class="kpi-value" style="font-size:22px;">${rawData.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Ay Sayısı</div><div class="kpi-value" style="font-size:22px;">${months.length}</div><div class="kpi-sub">${months.map(m=>{const d=new Date(m+'-01');return MONTH_TR[d.getMonth()].substring(0,3)+' '+d.getFullYear();}).join(' · ')}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Platform</div><div class="kpi-value" style="font-size:22px;">${platforms.length}</div><div class="kpi-sub">${platforms.join(', ')}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Tarih Aralığı</div><div class="kpi-value" style="font-size:14px;margin-top:4px;">${minD.toLocaleDateString('tr-TR')} – ${maxD.toLocaleDateString('tr-TR')}</div></div>
+  `;
+}
+
+function parseDate(s) {
+  if (!s || s === 'Toplam' || s === 'Total') return null;
+  // Instagram export format: "04/11/2026 04:24"
+  const igMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (igMatch) return new Date(igMatch[3], igMatch[1]-1, igMatch[2]);
+  const d = new Date(s);
+  if (!isNaN(d)) return d;
+  const parts = s.split(/[./\-]/);
+  if (parts.length >= 3) {
+    if (parts[2].length === 4) return new Date(parts[2], parts[1]-1, parts[0]);
+    return new Date(parts[0], parts[1]-1, parts[2]);
+  }
+  return null;
+}
+
+const MONTH_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function monthLabel(d) { return MONTH_TR[d.getMonth()] + ' ' + d.getFullYear(); }
+function monthKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+
+function num(v) { return parseFloat(String(v).replace(/[^0-9.-]/g,'')) || 0; }
+
+function handleFile(file) {
+  if (!file) return;
+  Papa.parse(file, {
+    header: true, skipEmptyLines: true, encoding: 'UTF-8',
+    complete: function(res) {
+      const newRows = res.data.map(r => {
+        // Tarih: önce "Publish time", sonra "Yayınlanma zamanı", sonra "Tarih"
+        const dateStr = r['Publish time'] || r['Yayınlanma zamanı'] || r['Tarih'] || r['tarih'] || r['Date'] || '';
+        const d = parseDate(dateStr);
+
+        // Platform: "Post type" veya "Gönderi türü" sütunundan çıkar
+        const postType = r['Post type'] || r['Gönderi türü'] || '';
+        let platform = r['Platform'] || r['platform'] || '';
+        if (!platform && postType) {
+          if (postType.toLowerCase().includes('ig') || postType.toLowerCase().includes('reel') || postType.toLowerCase().includes('döngü')) platform = 'Instagram';
+          else if (postType.toLowerCase().includes('fb') || postType.toLowerCase().includes('facebook')) platform = 'Facebook';
+          else if (postType.toLowerCase().includes('tiktok') || postType.toLowerCase().includes('tik')) platform = 'TikTok';
+          else if (postType.toLowerCase().includes('yt') || postType.toLowerCase().includes('youtube')) platform = 'YouTube';
+          else if (postType.toLowerCase().includes(' x ') || postType.toLowerCase() === 'x') platform = 'X';
+          else platform = postType || '—';
+        }
+
+        // İçerik türü — Post type'dan otomatik, Türkçeleştir
+        const postTypeRaw = r['Post type'] || r['Gönderi türü'] || r['İçerik Türü'] || r['tur'] || '';
+        let tur = '';
+        const ptl = postTypeRaw.toLowerCase();
+        if (ptl.includes('reel')) tur = 'Reels';
+        else if (ptl.includes('döngü') || ptl.includes('carousel') || ptl.includes('album')) tur = 'Carousel';
+        else if (ptl.includes('image') || ptl.includes('resim') || ptl.includes('foto') || ptl.includes('photo')) tur = 'Fotoğraf';
+        else if (ptl.includes('video')) tur = 'Video';
+        else if (ptl.includes('story') || ptl.includes('hikaye')) tur = 'Hikaye';
+        else if (ptl) tur = postTypeRaw;
+
+        const begeni   = num(r['Beğenmeler'] || r['Beğeni'] || r['Likes'] || 0);
+        const yorum    = num(r['Yorumlar']   || r['Yorum']  || r['Comments'] || 0);
+        const paylasim = num(r['Paylaşımlar']|| r['Paylaşım']|| r['Shares'] || 0);
+        const kaydetme = num(r['Kaydedilenler']||r['Kaydetme']||r['Saves'] || 0);
+        const erisim   = num(r['Erişim'] || r['Reach'] || r['erisim'] || 0);
+        // Etkileşim = Beğeni + Yorum + Paylaşım + Kaydetme
+        const etkilesim = begeni + yorum + paylasim + kaydetme;
+        // ER % = Etkileşim / Erişim × 100
+        const er = erisim > 0 ? (etkilesim / erisim * 100) : 0;
+
+        const link = r['Sabit bağlantı'] || r['Permalink'] || r['İçerik Linki'] || r['link'] || '';
+        return {
+          ...r,
+          _id: String(r['Post ID'] || r['Gönderi Kodu'] || link || (dateStr + '_' + erisim)),
+          _date: d,
+          _monthKey: d ? monthKey(d) : '',
+          _monthLabel: d ? monthLabel(d) : '',
+          _erisim: erisim,
+          _izlenme: num(r['Görüntülemeler'] || r['İzlenme'] || r['Views'] || r['Plays'] || 0),
+          _begeni: begeni,
+          _yorum: yorum,
+          _paylasim: paylasim,
+          _kaydetme: kaydetme,
+          _etkilesim: etkilesim,
+          _er: er,
+          _sure: num(r['Süre (sn)'] || r['Duration (sec)'] || r['sure'] || r['Ortalama İzlenme Süresi (sn)'] || 0),
+          _platform: platform || 'Instagram',
+          _account: r['Account username'] || r['Hesap kullanıcı adı'] || '',
+          _tur: tur,
+          _kategori: r['Kategori'] || r['kategori'] || '',
+          _format: r['Format'] || r['format'] || '',
+          _ton: r['Dil Tonu'] || r['ton'] || '',
+          _link: link,
+        };
+      }).filter(r => r._date);
+
+      let added = 0, updated = 0;
+      if (uploadMode === 'merge' && rawData.length > 0) {
+        const existingMap = new Map(rawData.map(r => [r._id, r]));
+        newRows.forEach(nr => {
+          if (existingMap.has(nr._id)) {
+            const old = existingMap.get(nr._id);
+            const savedKat = old._kategori; const savedFmt = old._format; const savedTon = old._ton;
+            Object.assign(old, nr);
+            // Manuel seçimleri koru
+            if (savedKat) old._kategori = savedKat;
+            if (savedFmt) old._format   = savedFmt;
+            if (savedTon) old._ton      = savedTon;
+            updated++;
+          } else {
+            rawData.push(nr);
+            added++;
+          }
+        });
+        rawData.sort((a,b) => b._date - a._date);
+        document.getElementById('uploadStatus').textContent = `✅ ${added} yeni kayıt eklendi, ${updated} güncellendi. Toplam: ${rawData.length}`;
+        showToast(`✅ ${added} yeni + ${updated} güncellendi`);
+      } else {
+        rawData = newRows;
+        rawData.sort((a,b) => b._date - a._date);
+        document.getElementById('uploadStatus').textContent = '✅ ' + rawData.length + ' satır yüklendi.';
+        showToast('✅ ' + rawData.length + ' kayıt yüklendi');
+      }
+
+      populateSelects();
+      applyFilters();
+      updateDataStats();
+      // Tüm sekmeleri hazırla
+      renderMainTable();
+      showSection('dashboard');
+      saveToStorage();
+    },
+  });
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+function populateSelects() {
+  const months = [...new Set(rawData.map(r => r._monthKey))].sort();
+  const years  = [...new Set(rawData.map(r => r._date ? r._date.getFullYear() : null).filter(Boolean))].sort();
+
+  ['monthSelect','rankMonth','catMonth','tableMonth','editMonth'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const firstOpt = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(firstOpt.cloneNode(true));
+    months.forEach(m => {
+      const d = new Date(m + '-01');
+      const o = document.createElement('option');
+      o.value = m; o.textContent = monthLabel(d);
+      sel.appendChild(o);
+    });
+  });
+
+  populateRankKategori();
+
+  // Hesap filtresi — birden fazla hesap varsa göster
+  const accounts = [...new Set(rawData.map(r => r._account).filter(Boolean))].sort();
+  const accSel = document.getElementById('accountFilter');
+  if (accSel) {
+    accSel.innerHTML = '<option value="">Tümü</option>';
+    accounts.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = '@' + a; accSel.appendChild(o); });
+    // Label'ı da göster/gizle
+    const accLabel = accSel.previousElementSibling;
+    const show = accounts.length > 1;
+    accSel.style.display = show ? '' : 'none';
+    if (accLabel) accLabel.style.display = show ? '' : 'none';
+  }
+
+  const yrSel = document.getElementById('yearSelect');
+  yrSel.innerHTML = '<option value="">Tüm Yıllar</option>';
+  years.forEach(y => {
+    const o = document.createElement('option'); o.value = y; o.textContent = y;
+    yrSel.appendChild(o);
+  });
+}
+
+function setRange(mode, btn) {
+  rangeMode = mode;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('monthSelect').style.display = mode === 'monthly' ? 'inline-block' : 'none';
+  applyFilters();
+}
+
+function applyFilters() {
+  const platform = document.getElementById('platformFilter').value;
+  const account  = document.getElementById('accountFilter') ? document.getElementById('accountFilter').value : '';
+  const year = document.getElementById('yearSelect').value;
+  const month = rangeMode === 'monthly' ? document.getElementById('monthSelect').value : '';
+
+  filteredData = rawData.filter(r => {
+    if (platform && r._platform !== platform) return false;
+    if (account  && r._account  !== account)  return false;
+    if (year && r._date && String(r._date.getFullYear()) !== String(year)) return false;
+    if (month && r._monthKey !== month) return false;
+    return true;
+  });
+  renderDashboard();
+}
+
+let rankBy = 'ER'; // 'ER' | 'Erişim' | 'Etkileşim'
+
+function setRankBy(mode, btn) {
+  rankBy = mode;
+  document.querySelectorAll('#sec-ranking .filter-btn[id^="rankBy"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking();
+}
+function setSecMetric(m, btn) {
+  secMetric = m;
+  document.querySelectorAll('#sec-ranking .filter-btn[id^="secRank"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking();
+}
+function setRankMetric() {} // eski, artık kullanılmıyor
+
+function populateRankKategori() {
+  const sel = document.getElementById('rankKategori');
+  if (!sel) return;
+  const cats = [...new Set(rawData.map(r => r._kategori).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Tümü</option>';
+  cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+
+  // Çoklu hesap checkbox'ları oluştur
+  const accounts = [...new Set(rawData.map(r => r._account).filter(Boolean))].sort();
+  buildAccountCheckboxes(accounts);
+
+  // Dashboard hesap filtresi (tekli select)
+  const accSel = document.getElementById('accountFilter');
+  if (accSel) {
+    accSel.innerHTML = '<option value="">Tümü</option>';
+    accounts.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = '@' + a; accSel.appendChild(o); });
+    const show = accounts.length > 1;
+    accSel.style.display = show ? '' : 'none';
+    const lbl = accSel.previousElementSibling;
+    if (lbl) lbl.style.display = show ? '' : 'none';
+  }
+}
+
+function renderRanking() {
+  const month    = document.getElementById('rankMonth').value;
+  const platform = document.getElementById('rankPlatform') ? document.getElementById('rankPlatform').value : '';
+  const tur      = document.getElementById('rankTur')      ? document.getElementById('rankTur').value      : '';
+  const kategori = document.getElementById('rankKategori') ? document.getElementById('rankKategori').value : '';
+
+  let data = rawData.filter(r => {
+    if (month    && r._monthKey  !== month)    return false;
+    if (platform && r._platform  !== platform) return false;
+    if (selectedAccounts.length && !selectedAccounts.includes(r._account)) return false;
+    if (tur      && r._tur       !== tur)      return false;
+    if (kategori && r._kategori  !== kategori) return false;
+    return true;
+  });
+
+  const secKey = secMetric === 'Yorum' ? '_yorum' : '_izlenme';
+  const primaryKey = rankBy === 'Erişim' ? '_erisim' : rankBy === 'Etkileşim' ? '_etkilesim' : '_er';
+
+  data = [...data].sort((a,b) => {
+    if (b[primaryKey] !== a[primaryKey]) return b[primaryKey] - a[primaryKey];
+    return b[secKey] - a[secKey];
+  });
+
+  document.getElementById('rankCount').textContent = data.length + ' içerik';
+
+  if (!data.length) {
+    document.querySelector('#rankTable').innerHTML = '<thead></thead><tbody><tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">Filtrelerle eşleşen içerik yok</td></tr></tbody>';
+    return;
+  }
+
+  const secLabel = secMetric === 'Yorum' ? 'Yorum' : 'İzlenme';
+  document.querySelector('#rankTable').innerHTML = `
+    <thead><tr>
+      <th>#</th><th>İçerik</th><th>Hesap</th><th>Platform</th><th>Tür</th><th>Kategori</th><th>Tarih</th>
+      <th>Erişim</th><th>Etkileşim</th><th>${secLabel}</th><th>ER %</th>
+    </tr></thead><tbody></tbody>`;
+
+  const b = document.querySelector('#rankTable tbody');
+  data.forEach((r,i) => {
+    b.innerHTML += `<tr>
+      <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
+      <td>${thumbCell(r)}</td>
+      <td style="font-size:12px;color:var(--text2);">${r['Account username'] || r['Hesap kullanıcı adı'] || '—'}</td>
+      <td><span class="badge badge-${platClass(r._platform)}">${r._platform}</span></td>
+      <td style="font-size:12px;">${r._tur || '—'}</td>
+      <td>${r._kategori || '—'}</td>
+      <td>${r._date ? r._date.toLocaleDateString('tr-TR') : '—'}</td>
+      <td>${fmt(r._erisim)}</td>
+      <td>${fmt(r._etkilesim)}</td>
+      <td>${fmt(r[secKey])}</td>
+      <td class="er-cell ${erClass(r._er)}">${r._er.toFixed(2)}%</td>
+    </tr>`;
+  });
+}
+
+// ====== DASHBOARD ======
+function renderDashboard() {
+  if (!filteredData.length) { document.getElementById('kpiGrid').innerHTML = '<div class="empty-state"><div class="icon">📊</div><h3>Veri Yok</h3><p>Önce CSV yükleyin</p></div>'; return; }
+
+  const totalErisim    = filteredData.reduce((s,r) => s+r._erisim,0);
+  const totalEtkilesim = filteredData.reduce((s,r) => s+r._etkilesim,0);
+  const totalER        = totalErisim > 0 ? ((totalEtkilesim/totalErisim)*100).toFixed(2) : '0.00';
+  const totalIzlenme   = filteredData.reduce((s,r) => s+r._izlenme,0);
+  const totalYorum     = filteredData.reduce((s,r) => s+r._yorum,0);
+  const totalBegeni    = filteredData.reduce((s,r) => s+r._begeni,0);
+  const totalPaylasim  = filteredData.reduce((s,r) => s+r._paylasim,0);
+  const avgSure        = filteredData.length ? (filteredData.reduce((s,r)=>s+r._sure,0)/filteredData.length).toFixed(1) : 0;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card accent"><div class="kpi-label">Etkileşim Oranı</div><div class="kpi-value">${totalER}%</div><div class="kpi-sub">Erişim Bazlı ER</div></div>
+    <div class="kpi-card"><div class="kpi-label">Toplam Erişim</div><div class="kpi-value">${fmt(totalErisim)}</div><div class="kpi-sub">${filteredData.length} içerik</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Toplam Etkileşim</div><div class="kpi-value">${fmt(totalEtkilesim)}</div><div class="kpi-sub">Beğeni + Yorum + Paylaşım</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Toplam İzlenme</div><div class="kpi-value">${fmt(totalIzlenme)}</div><div class="kpi-sub">Video izlenme</div></div>
+    <div class="kpi-card"><div class="kpi-label">Toplam Beğeni</div><div class="kpi-value">${fmt(totalBegeni)}</div><div class="kpi-sub">Tüm platformlar</div></div>
+    <div class="kpi-card"><div class="kpi-label">Toplam Yorum</div><div class="kpi-value">${fmt(totalYorum)}</div><div class="kpi-sub">Tüm platformlar</div></div>
+    <div class="kpi-card"><div class="kpi-label">Toplam Paylaşım</div><div class="kpi-value">${fmt(totalPaylasim)}</div><div class="kpi-sub">Tüm platformlar</div></div>
+    <div class="kpi-card cyan"><div class="kpi-label">Ort. İzlenme Süresi</div><div class="kpi-value">${avgSure}s</div><div class="kpi-sub">Video ortalaması</div></div>
+  `;
+
+  // ── Aylık ER trend — geliştirilmiş, her noktada etiket görünür ──
+  const byMonth  = groupBy(filteredData, r => r._monthKey);
+  const mKeys    = Object.keys(byMonth).sort();
+  const erValues = mKeys.map(k => {
+    const rows = byMonth[k];
+    const e = rows.reduce((s,r)=>s+r._erisim,0);
+    const t = rows.reduce((s,r)=>s+r._etkilesim,0);
+    return e>0 ? parseFloat((t/e*100).toFixed(2)) : 0;
+  });
+  const mLabels  = mKeys.map(k => { const d=new Date(k+'-01'); return MONTH_TR[d.getMonth()].substring(0,3)+' '+d.getFullYear(); });
+  const globalAvg = erValues.length ? parseFloat((erValues.reduce((a,b)=>a+b,0)/erValues.length).toFixed(2)) : 0;
+
+  destroyChart('erTrendChart');
+  const ctx = document.getElementById('erTrendChart');
+  if (ctx) {
+    charts['erTrendChart'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: mLabels,
+        datasets: [
+          {
+            label: 'Aylık ER %',
+            data: erValues,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,.12)',
+            tension: .35, fill: true,
+            pointBackgroundColor: '#3b82f6',
+            pointRadius: 6, pointHoverRadius: 8,
+            datalabels: { display: true }
+          },
+          {
+            label: `Genel Ort. ${globalAvg}%`,
+            data: mKeys.map(() => globalAvg),
+            borderColor: 'rgba(245,158,11,.7)',
+            borderDash: [6,4],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+            datalabels: { display: false }
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, labels: { color: '#94a3b8', font: { family: 'Barlow', size: 12 } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%` } },
+          datalabels: {
+            color: '#e2e8f0',
+            font: { family: 'Barlow', weight: '700', size: 11 },
+            formatter: v => v + '%',
+            anchor: 'end', align: 'top', offset: 4
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#64748b', font: { family: 'Barlow' } }, grid: { color: 'rgba(30,40,64,.5)' } },
+          y: {
+            ticks: { color: '#64748b', font: { family: 'Barlow' }, callback: v => v + '%' },
+            grid: { color: 'rgba(30,40,64,.5)' },
+            suggestedMin: 0
+          }
+        }
+      }
+    });
+  }
+
+  // ── Platform donut ──
+  const byPlat  = groupBy(filteredData, r => r._platform);
+  const pLabels = Object.keys(byPlat);
+  const pValues = pLabels.map(p => byPlat[p].reduce((s,r)=>s+r._etkilesim,0));
+  renderDoughnut('platformChart', pLabels, pValues);
+
+  // ── Kategori ER — aylık (seçili dönem) ──
+  const periodCatERs = catERRows(filteredData);
+  renderCatBarChart('catBarMonthly', periodCatERs);
+  const periodLabel = document.getElementById('monthSelect') && document.getElementById('monthSelect').value
+    ? document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text
+    : 'Seçili Dönem';
+  const subEl = document.getElementById('catChartMonthSub');
+  if (subEl) subEl.textContent = periodLabel;
+
+  // ── Kategori ER — tüm zamanlar ──
+  const allCatERs = catERRows(rawData);
+  renderCatBarChart('catBarAll', allCatERs);
+}
+
+function renderCatBarChart(id, catERs) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx || !catERs.length) return;
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: catERs.map(c => c.cat),
+      datasets: [{
+        label: 'ER %',
+        data: catERs.map(c => parseFloat(c.er.toFixed(2))),
+        backgroundColor: catERs.map(c =>
+          c.er >= 5 ? 'rgba(16,185,129,.75)' :
+          c.er >= 2 ? 'rgba(245,158,11,.75)' :
+                      'rgba(239,68,68,.65)'
+        ),
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ER: ${c.parsed.x}%` } },
+        datalabels: {
+          color: '#e2e8f0', font: { family: 'Barlow', weight: '700', size: 11 },
+          formatter: v => v + '%', anchor: 'end', align: 'right', offset: 4
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { family: 'Barlow' }, callback: v => v + '%' },
+             grid: { color: 'rgba(30,40,64,.4)' }, suggestedMin: 0 },
+        y: { ticks: { color: '#e2e8f0', font: { family: 'Barlow', weight: '600' } },
+             grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ====== RANKING ======
+// ====== THUMBNAIL + LINK ======
+function thumbCell(r) {
+  const link = r._link || '';
+  const desc = r['Açıklama'] || r['Description'] || r['Açıklama '] || '';
+  const shortDesc = desc.replace(/\n/g,' ').substring(0, 60) + (desc.length > 60 ? '…' : '');
+
+  // Instagram shortcode'u linkten çıkar
+  let shortcode = '';
+  if (link) {
+    const m = link.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (m) shortcode = m[2];
+  }
+
+  const isReel = r._tur === 'Reels';
+  const platIcon = r._platform === 'Instagram' ? '📷' : r._platform === 'TikTok' ? '🎵' : r._platform === 'YouTube' ? '▶️' : r._platform === 'Facebook' ? '👤' : '🔗';
+
+  let thumbHtml = '';
+  if (shortcode) {
+    // Instagram embed thumbnail via shortcode
+    const imgUrl = `https://www.instagram.com/p/${shortcode}/media/?size=t`;
+    thumbHtml = `
+      <a href="${link}" target="_blank" rel="noopener" class="thumb-link">
+        <div class="thumb-wrap">
+          <img src="${imgUrl}" alt="" onerror="this.parentNode.innerHTML='<div style=\\'font-size:20px;text-align:center;padding-top:12px\\'>${platIcon}</div>'" loading="lazy" />
+          <div class="thumb-play">${isReel ? '▶' : '🔍'}</div>
+        </div>
+      </a>`;
+  } else if (link) {
+    thumbHtml = `<a href="${link}" target="_blank" rel="noopener" class="thumb-link"><div class="thumb-placeholder">${platIcon}</div></a>`;
+  } else {
+    thumbHtml = `<div class="thumb-placeholder">${platIcon}</div>`;
+  }
+
+  const linkBadge = link ? `<a href="${link}" target="_blank" class="thumb-link-small">🔗 İçeriğe git</a><span class="pdf-link-badge"> ${link}</span>` : '';
+
+  return `<div class="thumb-cell">
+    ${thumbHtml}
+    <div class="thumb-info">
+      <div class="thumb-desc">${shortDesc || '—'}</div>
+      ${linkBadge}
+    </div>
+  </div>`;
+}
+
+// ====== CATEGORIES ======
+function catERRows(data) {
+  const byCat = groupBy(data, r => r._kategori || 'Belirsiz');
+  return Object.keys(byCat).map(c => {
+    const rows = byCat[c];
+    const e = rows.reduce((s,r)=>s+r._erisim,0);
+    const t = rows.reduce((s,r)=>s+r._etkilesim,0);
+    return { cat: c, er: e>0?t/e*100:0, count: rows.length, erisim: e, etkilesim: t };
+  }).sort((a,b) => b.er-a.er);
+}
+
+function renderCatBreakdown(elId, catERs) {
+  const maxER = Math.max(...catERs.map(c=>c.er), 0.01);
+  document.getElementById(elId).innerHTML = catERs.length
+    ? catERs.map(c => `
+      <div class="cat-row">
+        <div class="cat-name">${c.cat || '—'}</div>
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${(c.er/maxER*100).toFixed(1)}%"></div></div>
+        <div class="cat-er">${c.er.toFixed(2)}%</div>
+      </div>`).join('')
+    : '<div style="color:var(--text3);padding:20px">Kategori verisi yok — Veri Düzenle\'den kategori atayın</div>';
+}
+
+function renderCategories() {
+  const month = document.getElementById('catMonth').value;
+  // Seçili dönem
+  const periodData = month ? rawData.filter(r => r._monthKey === month) : rawData;
+  const periodERs  = catERRows(periodData);
+  renderCatBreakdown('catBreakdown', periodERs);
+
+  // Her zaman tüm zamanlar kümülatif
+  const allERs = catERRows(rawData);
+  renderCatBreakdown('catBreakdownAll', allERs);
+
+  renderDoughnut('catChart', allERs.map(c=>c.cat), allERs.map(c=>c.count));
+
+  const catTable = document.getElementById('catTable');
+  catTable.innerHTML = `<thead><tr><th>Kategori</th><th>İçerik</th><th>Erişim</th><th>Etkileşim</th><th>ER %</th></tr></thead><tbody>
+    ${periodERs.map(c => `<tr>
+      <td><b>${c.cat}</b></td><td>${c.count}</td><td>${fmt(c.erisim)}</td><td>${fmt(c.etkilesim)}</td>
+      <td class="er-cell ${erClass(c.er)}">${c.er.toFixed(2)}%</td>
+    </tr>`).join('')}
+  </tbody>`;
+}
+
+// ====== VIDEOS ======
+function renderVideos() {
+  // Tüm içerikler: Reels veya süresi olan
+  const all = rawData.filter(r => r._tur === 'Reels' || r._sure > 0);
+
+  // 10 sn altı: Duration (sec) < 10 — ama bu toplam süre değil, ortalama izlenme süresi ayrı
+  // CSV'de Duration(sec) = videonun toplam süresi; Ortalama izlenme süresi ayrı
+  const short = all.filter(r => r._sure > 0 && r._sure < 10).sort((a,b)=>b._er-a._er);
+  const long  = all.filter(r => r._sure >= 10).sort((a,b)=>b._er-a._er);
+
+  // Video süresi = Duration (sec) — ortalama izlenme süresi bu CSV'de ayrıca gelmiyor
+  function videoLen(r) {
+    return r._sure > 0 ? r._sure + 's' : '—';
+  }
+
+  const videoRow = (r, i) => `<tr>
+    <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
+    <td>${thumbCell(r)}</td>
+    <td><span class="badge badge-${platClass(r._platform)}">${r._platform}</span></td>
+    <td>${r._kategori || '—'}</td>
+    <td>${videoLen(r)}</td>
+    <td>${fmt(r._erisim)}</td>
+    <td>${fmt(r._etkilesim)}</td>
+    <td class="er-cell ${erClass(r._er)}">${r._er.toFixed(2)}%</td>
+  </tr>`;
+
+  const hdr = `<thead><tr><th>#</th><th>İçerik</th><th>Platform</th><th>Kategori</th><th>Video Süresi</th><th>Erişim</th><th>Etkileşim</th><th>ER %</th></tr></thead>`;
+  const empty = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Veri yok</td></tr>';
+
+  document.getElementById('shortTable').innerHTML = hdr + '<tbody>' + (short.length ? short.map(videoRow).join('') : empty) + '</tbody>';
+  document.getElementById('longTable').innerHTML  = hdr + '<tbody>' + (long.length  ? long.map(videoRow).join('')  : empty) + '</tbody>';
+}
+
+
+// ====== MAIN TABLE ======
+let tableSortAsc = false;
+
+function toggleTableSort(btn) {
+  tableSortAsc = !tableSortAsc;
+  btn.textContent = tableSortAsc ? '↑ Küçükten Büyüğe' : '↓ Büyükten Küçüğe';
+  btn.classList.toggle('active', !tableSortAsc);
+  renderMainTable();
+}
+
+function renderMainTable() {
+  const month   = document.getElementById('tableMonth').value;
+  const sortCol = document.getElementById('tableSortCol') ? document.getElementById('tableSortCol').value : '_date';
+  // filteredData yerine rawData — ay filtresi manuel
+  let data = rawData.filter(r => !month || r._monthKey === month);
+
+  data = [...data].sort((a,b) => {
+    const va = sortCol === '_date' ? (a._date ? a._date.getTime() : 0) : (a[sortCol] || 0);
+    const vb = sortCol === '_date' ? (b._date ? b._date.getTime() : 0) : (b[sortCol] || 0);
+    return tableSortAsc ? va - vb : vb - va;
+  });
+
+  document.getElementById('tableCount').textContent = data.length + ' kayıt';
+
+  if (!data.length) {
+    document.getElementById('mainTable').innerHTML = '<tbody><tr><td colspan="16" style="text-align:center;padding:40px;color:var(--text3)">Veri yok — önce CSV yükleyin</td></tr></tbody>';
+    return;
+  }
+
+  try {
+    const table = document.getElementById('mainTable');
+    table.innerHTML = `<thead><tr>
+      <th>İçerik</th><th>Tarih</th><th>Platform</th><th>Tür</th><th>Kategori</th><th>Format</th><th>Dil Tonu</th>
+      <th>Erişim</th><th>İzlenme</th><th>Beğeni</th><th>Yorum</th><th>Paylaşım</th><th>Kaydetme</th>
+      <th>Top. Etk.</th><th>Süre</th><th>ER %</th>
+    </tr></thead><tbody>
+      ${data.map(r => `<tr>
+        <td>${thumbCell(r)}</td>
+        <td style="white-space:nowrap;font-size:12px;">${descDate(r._date)}</td>
+        <td><span class="badge badge-${platClass(r._platform)}">${r._platform}</span></td>
+        <td style="font-size:12px;">${r._tur || '—'}</td>
+        <td style="font-size:12px;">${r._kategori || '—'}</td>
+        <td style="font-size:12px;">${r._format || '—'}</td>
+        <td style="font-size:12px;">${r._ton || '—'}</td>
+        <td>${fmt(r._erisim)}</td><td>${fmt(r._izlenme)}</td><td>${fmt(r._begeni)}</td>
+        <td>${fmt(r._yorum)}</td><td>${fmt(r._paylasim)}</td><td>${fmt(r._kaydetme)}</td>
+        <td>${fmt(r._etkilesim)}</td>
+        <td style="font-size:12px;">${r._sure > 0 ? r._sure + 'sn.' : '—'}</td>
+        <td class="er-cell ${erClass(r._er)}">${r._er.toFixed(2)}%</td>
+      </tr>`).join('')}
+    </tbody>`;
+  } catch(e) {
+    console.error('Tablo render hatası:', e);
+    document.getElementById('mainTable').innerHTML = '<tbody><tr><td colspan="16" style="text-align:center;padding:20px;color:var(--red)">Tablo yüklenirken hata oluştu. Konsolu kontrol edin.</td></tr></tbody>';
+  }
+}
+
+// ====== CHARTS ======
+const CHART_COLORS = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#f97316'];
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function renderLineChart(id, labels, values, label) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label, data: values, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.1)', tension: .4, fill: true, pointBackgroundColor: '#3b82f6', pointRadius: 4 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: {
+      x: { ticks: { color: '#475569' }, grid: { color: 'rgba(30,40,64,.6)' } },
+      y: { ticks: { color: '#475569' }, grid: { color: 'rgba(30,40,64,.6)' } }
+    }}
+  });
+}
+
+function renderDoughnut(id, labels, values) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: CHART_COLORS, borderWidth: 0 }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, font: { size: 12 } } } } }
+  });
+}
+
+function renderBarChart(id, labels, vals1, vals2) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Erişim', data: vals1, backgroundColor: 'rgba(59,130,246,.7)', borderRadius: 4 },
+        { label: 'Etkileşim', data: vals2, backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 4 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: {
+      x: { ticks: { color: '#475569' }, grid: { color: 'rgba(30,40,64,.6)' } },
+      y: { ticks: { color: '#475569' }, grid: { color: 'rgba(30,40,64,.6)' } }
+    }}
+  });
+}
+
+// ====== PDF EXPORT ======
+function exportPDF() { window.print(); }
+
+// ====== TEMPLATE ======
+function downloadTemplate() {
+  const headers = 'Tarih,Platform,İçerik Türü,Kategori,Format,Dil Tonu,İçerik Linki,Erişim,İzlenme,Beğeni,Yorum,Paylaşım,Kaydetme,Toplam Etkileşim,Ortalama İzlenme Süresi (sn)\n';
+  const example = '01.01.2025,Instagram,Reels,Kültür,Video,Samimi,https://instagram.com/p/abc,5000,8000,320,45,80,120,565,18\n';
+  const blob = new Blob(['\uFEFF'+headers+example], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'dijital_medya_sablon.csv'; a.click();
+}
+
+
+// ====== MOBİL HAMBURGER ======
+function toggleMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  nav.classList.toggle('open');
+}
+function closeMobileNav() {
+  // Kısa gecikme ile kapat — tıklama olayının önce işlenmesini sağlar
+  setTimeout(() => {
+    document.getElementById('mobileNav').classList.remove('open');
+  }, 50);
+}
+
+// Menü dışına tıklayınca kapat — hamburger ve menünün kendisi hariç
+document.addEventListener('click', function(e) {
+  const nav = document.getElementById('mobileNav');
+  const btn = document.getElementById('hamburgerBtn');
+  if (!nav || !btn) return;
+  if (!nav.contains(e.target) && !btn.contains(e.target)) {
+    nav.classList.remove('open');
+  }
+  // Account dropdown dışına tıklayınca kapat
+  const menu = document.getElementById('accountMenu');
+  const dropdown = document.getElementById('accountDropdown');
+  if (menu && dropdown && !dropdown.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+
+// ====== ÇOKLU HESAP SEÇİMİ ======
+let selectedAccounts = []; // boş = tümü
+
+function toggleAccountMenu(e) {
+  e.stopPropagation();
+  document.getElementById('accountMenu').classList.toggle('open');
+}
+
+function toggleAllAccounts(cb) {
+  const boxes = document.querySelectorAll('#accountCheckboxes input[type="checkbox"]');
+  boxes.forEach(b => { b.checked = cb.checked; });
+  selectedAccounts = [];
+  updateAccountBtn();
+  renderRanking();
+}
+
+function onAccountCheck() {
+  const boxes = document.querySelectorAll('#accountCheckboxes input[type="checkbox"]');
+  const allBox = document.getElementById('acctAll');
+  selectedAccounts = [...boxes].filter(b => b.checked).map(b => b.value);
+  const allChecked = selectedAccounts.length === boxes.length;
+  allBox.checked = allChecked;
+  if (allChecked) selectedAccounts = [];
+  updateAccountBtn();
+  renderRanking();
+}
+
+function updateAccountBtn() {
+  const label = document.getElementById('accountBtnLabel');
+  if (!selectedAccounts.length) {
+    label.innerHTML = 'Tümü';
+  } else if (selectedAccounts.length === 1) {
+    label.innerHTML = '@' + selectedAccounts[0];
+  } else {
+    label.innerHTML = `${selectedAccounts.length} hesap <span class="account-badge">${selectedAccounts.length}</span>`;
+  }
+}
+
+function buildAccountCheckboxes(accounts) {
+  const container = document.getElementById('accountCheckboxes');
+  if (!container) return;
+  container.innerHTML = accounts.map(a => `
+    <label>
+      <input type="checkbox" value="${a}" checked onchange="onAccountCheck()">
+      @${a}
+    </label>
+  `).join('');
+  selectedAccounts = [];
+  updateAccountBtn();
+}
+
+
+let customCategories = ['Genel','Kültür','Spor','Haber','Eğlence','Eğitim','Duyuru','Etkinlik','Fen İşleri','Zabıta','Yol İşleri'];
+let customTones      = ['Samimi','Resmi','Eğlenceli','Bilgilendirici','Duygusal','Motivasyonel','Nötr'];
+let customFormats    = ['Haber','Özel İçerik','Trend','Başkan Vlog','Etkinlik','Proje Tanıtım','Kutlama','Bilgilendirme'];
+
+function renderSettings() {
+  const cl = document.getElementById('catList');
+  cl.innerHTML = customCategories.map((c,i) => `
+    <span class="tag-item">${c}<button class="tag-del" onclick="deleteCat(${i})">×</button></span>
+  `).join('');
+  const tl = document.getElementById('tonList');
+  tl.innerHTML = customTones.map((t,i) => `
+    <span class="tag-item">${t}<button class="tag-del" onclick="deleteTon(${i})">×</button></span>
+  `).join('');
+  const fl = document.getElementById('formatList');
+  fl.innerHTML = customFormats.map((f,i) => `
+    <span class="tag-item">${f}<button class="tag-del" onclick="deleteFormat(${i})">×</button></span>
+  `).join('');
+
+  // Kullanıcı yönetimi — sadece admin
+  const umSection = document.getElementById('userMgmtSection');
+  if (currentRole === 'admin') {
+    umSection.style.display = 'block';
+    // Mevcut kullanıcı adlarını doldur
+    const adminKey  = Object.keys(USERS).find(k => USERS[k].role === 'admin');
+    const viewerKey = Object.keys(USERS).find(k => USERS[k].role === 'viewer');
+    if (adminKey)  document.getElementById('adminUserInput').value  = adminKey;
+    if (viewerKey) document.getElementById('viewerUserInput').value = viewerKey;
+  } else {
+    umSection.style.display = 'none';
+  }
+}
+
+async function saveUserSettings(role) {
+  const isAdmin = role === 'admin';
+  const userInput = document.getElementById(isAdmin ? 'adminUserInput' : 'viewerUserInput');
+  const passInput = document.getElementById(isAdmin ? 'adminPassInput' : 'viewerPassInput');
+
+  const newUser = userInput.value.trim();
+  const newPass = passInput.value.trim();
+
+  if (!newUser) { showToast('⚠️ Kullanıcı adı boş olamaz'); return; }
+
+  // Mevcut kaydı bul ve güncelle
+  const oldKey = Object.keys(USERS).find(k => USERS[k].role === role);
+  const oldPass = oldKey ? USERS[oldKey].pass : '';
+
+  // Eski anahtarı sil, yenisini ekle
+  if (oldKey && oldKey !== newUser) delete USERS[oldKey];
+  USERS[newUser] = { pass: newPass || oldPass, role };
+
+  // Supabase'e kaydet
+  try {
+    await sb.from('ayarlar').upsert([
+      { key: 'kullanicilar', value: Object.entries(USERS).map(([u, v]) => ({ u, p: v.pass, r: v.role })) }
+    ], { onConflict: 'key' });
+    showToast('✅ ' + (isAdmin ? 'Admin' : 'İzleyici') + ' bilgileri kaydedildi');
+    passInput.value = '';
+    // Eğer kendi adını değiştirdiyse çıkış yap
+    if (isAdmin && oldKey !== newUser && currentUser === oldKey) {
+      showToast('⚠️ Kullanıcı adınız değişti, tekrar giriş yapın');
+      setTimeout(() => doLogout(), 2000);
+    }
+  } catch(e) {
+    showToast('❌ Kayıt hatası: ' + e.message);
+  }
+}
+function addCategory() {
+  const v = document.getElementById('newCatInput').value.trim();
+  if (v && !customCategories.includes(v)) { customCategories.push(v); renderSettings(); showToast('Kategori eklendi: ' + v); }
+  document.getElementById('newCatInput').value = '';
+}
+function deleteCat(i) { customCategories.splice(i,1); renderSettings(); }
+function addTon() {
+  const v = document.getElementById('newTonInput').value.trim();
+  if (v && !customTones.includes(v)) { customTones.push(v); renderSettings(); showToast('Dil tonu eklendi: ' + v); }
+  document.getElementById('newTonInput').value = '';
+}
+function deleteTon(i) { customTones.splice(i,1); renderSettings(); }
+function addFormat() {
+  const v = document.getElementById('newFormatInput').value.trim();
+  if (v && !customFormats.includes(v)) { customFormats.push(v); renderSettings(); showToast('Format eklendi: ' + v); }
+  document.getElementById('newFormatInput').value = '';
+}
+function deleteFormat(i) { customFormats.splice(i,1); renderSettings(); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.id === 'newCatInput') addCategory();
+  if (e.key === 'Enter' && document.activeElement.id === 'newTonInput') addTon();
+  if (e.key === 'Enter' && document.activeElement.id === 'newFormatInput') addFormat();
+});
+
+// ====== EDIT TABLE ======
+function renderEditTable() {
+  const month = document.getElementById('editMonth').value;
+  const data = month ? rawData.filter(r => r._monthKey === month) : rawData;
+  const tbody = document.getElementById('editTbody');
+
+  const catOpts = customCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+  const tonOpts = customTones.map(t => `<option value="${t}">${t}</option>`).join('');
+  const fmtOpts = customFormats.map(f => `<option value="${f}">${f}</option>`).join('');
+
+  // 3 kelime önizleme, tam metin title tooltip'te
+  const shortDesc = r => {
+    const d = (r['Açıklama'] || r['Description'] || '').replace(/\n/g,' ').trim();
+    if (!d) return { short: '—', full: '' };
+    const words = d.split(' ').filter(Boolean);
+    const short = words.slice(0,3).join(' ') + (words.length > 3 ? '…' : '');
+    return { short, full: d };
+  };
+
+  tbody.innerHTML = data.map((r, i) => {
+    const globalIdx = rawData.indexOf(r);
+    const { short, full } = shortDesc(r);
+    const sureVal = r._sure > 0 ? r._sure : '';
+    return `<tr>
+      <td style="color:var(--text3);font-size:12px;width:36px;">${i+1}</td>
+      <td style="font-size:11px;white-space:nowrap;color:var(--text2);">${descDate(r._date)}</td>
+      <td style="width:120px;">
+        <span title="${full.replace(/"/g,'&quot;')}"
+          style="font-size:12px;color:var(--text);cursor:help;white-space:nowrap;
+          border-bottom:1px dashed var(--text3);display:inline-block;max-width:110px;
+          overflow:hidden;text-overflow:ellipsis;">${short}</span>
+      </td>
+      <td><span class="badge badge-${platClass(r._platform)}">${r._platform}</span></td>
+      <td style="font-size:11px;color:var(--text2);white-space:nowrap;">${r._tur || '—'}</td>
+      <td style="min-width:140px;">
+        <select class="edit-select" data-idx="${globalIdx}" data-field="kat" onchange="markChanged(this)">
+          <option value="">— Kategori —</option>${catOpts}
+        </select>
+      </td>
+      <td style="min-width:140px;">
+        <select class="edit-select" data-idx="${globalIdx}" data-field="ton" onchange="markChanged(this)">
+          <option value="">— Dil Tonu —</option>${tonOpts}
+        </select>
+      </td>
+      <td style="min-width:140px;">
+        <select class="edit-select" data-idx="${globalIdx}" data-field="fmt" onchange="markChanged(this)">
+          <option value="">— Format —</option>${fmtOpts}
+        </select>
+      </td>
+      <td style="width:90px;">
+        <input type="number" min="0" value="${sureVal}"
+          data-idx="${globalIdx}" data-field="sure"
+          onchange="markChanged(this)"
+          placeholder="sn."
+          style="width:80px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);
+          border-radius:6px;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;text-align:center;" />
+      </td>
+      <td style="font-size:12px;white-space:nowrap;">${fmt(r._erisim)}</td>
+      <td class="er-cell ${erClass(r._er)}" style="white-space:nowrap;">${r._er.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+
+  // Mevcut değerleri setle
+  data.forEach((r) => {
+    const globalIdx = rawData.indexOf(r);
+    const katSel = tbody.querySelector(`select[data-idx="${globalIdx}"][data-field="kat"]`);
+    const tonSel = tbody.querySelector(`select[data-idx="${globalIdx}"][data-field="ton"]`);
+    const fmtSel = tbody.querySelector(`select[data-idx="${globalIdx}"][data-field="fmt"]`);
+    if (katSel && r._kategori) katSel.value = r._kategori;
+    if (tonSel && r._ton)      tonSel.value = r._ton;
+    if (fmtSel && r._format)   fmtSel.value = r._format;
+  });
+}
+
+function markChanged(sel) { sel.classList.add('changed'); }
+
+function applyEdits() {
+  // Select alanları
+  const selects = document.querySelectorAll('#editTbody select');
+  let changed = 0;
+  selects.forEach(sel => {
+    const idx = parseInt(sel.dataset.idx);
+    const field = sel.dataset.field;
+    const val = sel.value;
+    if (!val) return;
+    if (field === 'kat' && rawData[idx]._kategori !== val) { rawData[idx]._kategori = val; changed++; }
+    if (field === 'ton' && rawData[idx]._ton      !== val) { rawData[idx]._ton      = val; changed++; }
+    if (field === 'fmt' && rawData[idx]._format   !== val) { rawData[idx]._format   = val; changed++; }
+    sel.classList.remove('changed');
+  });
+  // Süre input'ları
+  const sureInputs = document.querySelectorAll('#editTbody input[data-field="sure"]');
+  sureInputs.forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    const val = parseFloat(inp.value);
+    if (!isNaN(val) && val >= 0 && rawData[idx]._sure !== val) {
+      rawData[idx]._sure = val;
+      changed++;
+    }
+    inp.classList.remove('changed');
+  });
+  showToast('✅ ' + changed + ' alan güncellendi');
+  populateSelects();
+  saveToStorage();
+}
+
+// Register datalabels plugin
+if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+
+const GUNLER = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+function descDate(d) {
+  if (!d) return '—';
+  const gun = GUNLER[d.getDay()];
+  const g   = String(d.getDate()).padStart(2,'0');
+  const ay  = String(d.getMonth()+1).padStart(2,'0');
+  const yil = d.getFullYear();
+  const sa  = String(d.getHours()).padStart(2,'0');
+  const dk  = String(d.getMinutes()).padStart(2,'0');
+  const saat = (sa !== '00' || dk !== '00') ? ` ${sa}:${dk}` : '';
+  return `${g}.${ay}.${yil} ${gun}${saat}`;
+}
+
+// ====== LOCALSTORAGE ======
+// ====== SUPABASE ======
+const SUPABASE_URL  = 'https://ezkmimwxpgivhxuvfmcv.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6a21pbXd4cGdpdmh4dXZmbWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxOTgyNjAsImV4cCI6MjA5Nzc3NDI2MH0.A1EW37WenfwkIDH5Eas8Uk9aZsFE1nyukfrgp4a2ELs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Veriyi Supabase'e kaydet
+async function saveToStorage() {
+  showToast('⏳ Kaydediliyor...');
+  try {
+    // İçerikleri upsert et (varsa güncelle, yoksa ekle)
+    const rows = rawData.map(r => ({
+      id: r._id || (r._platform + '_' + (r._date ? r._date.getTime() : Math.random())),
+      tarih: r._date ? r._date.toISOString() : null,
+      month_key: r._monthKey || '',
+      platform: r._platform || '',
+      tur: r._tur || '',
+      kategori: r._kategori || '',
+      format: r._format || '',
+      ton: r._ton || '',
+      link: r._link || '',
+      aciklama: (r['Açıklama'] || r['Description'] || '').substring(0, 500),
+      hesap: r._account || '',
+      erisim: r._erisim || 0,
+      izlenme: r._izlenme || 0,
+      begeni: r._begeni || 0,
+      yorum: r._yorum || 0,
+      paylasim: r._paylasim || 0,
+      kaydetme: r._kaydetme || 0,
+      etkilesim: r._etkilesim || 0,
+      sure: r._sure || 0,
+      er: parseFloat((r._er || 0).toFixed(4)),
+      ham_veri: r
+    }));
+
+    // 100'er grupla gönder (Supabase limiti)
+    for (let i = 0; i < rows.length; i += 100) {
+      const chunk = rows.slice(i, i + 100);
+      const { error } = await sb.from('icerikler').upsert(chunk, { onConflict: 'id' });
+      if (error) throw error;
+    }
+
+    // Ayarları kaydet
+    await sb.from('ayarlar').upsert([
+      { key: 'kategoriler',  value: customCategories },
+      { key: 'dil_tonlari', value: customTones },
+      { key: 'formatlar',   value: customFormats }
+    ], { onConflict: 'key' });
+
+    showToast('✅ Veri buluta kaydedildi (' + rawData.length + ' kayıt)');
+  } catch(e) {
+    console.error('Supabase kayıt hatası:', e);
+    showToast('❌ Kayıt hatası: ' + (e.message || e));
+  }
+}
+
+// Veriyi Supabase'den yükle
+async function loadFromStorage() {
+  try {
+    showToast('⏳ Veriler yükleniyor...');
+
+    // Ayarları yükle
+    const { data: ayarlar } = await sb.from('ayarlar').select('*');
+    if (ayarlar && ayarlar.length) {
+      ayarlar.forEach(a => {
+        if (a.key === 'kategoriler')  customCategories = a.value;
+        if (a.key === 'dil_tonlari') customTones      = a.value;
+        if (a.key === 'formatlar')   customFormats    = a.value;
+        if (a.key === 'kullanicilar' && Array.isArray(a.value)) {
+          // Kullanıcıları yükle
+          a.value.forEach(u => { USERS[u.u] = { pass: u.p, role: u.r }; });
+        }
+      });
+    }
+
+    // İçerikleri yükle — toplam sayıyı önce al
+    const { count } = await sb.from('icerikler').select('*', { count: 'exact', head: true });
+    if (!count) return false;
+
+    // Tüm içerikleri sayfalı yükle
+    let allRows = [];
+    const pageSize = 1000;
+    for (let from = 0; from < count; from += pageSize) {
+      const { data, error } = await sb.from('icerikler')
+        .select('*')
+        .range(from, from + pageSize - 1)
+        .order('tarih', { ascending: false });
+      if (error) throw error;
+      allRows = allRows.concat(data);
+    }
+
+    // ham_veri'den rawData'yı yeniden oluştur
+    rawData = allRows.map(r => {
+      const ham = r.ham_veri || {};
+      return {
+        ...ham,
+        _id:        r.id,
+        _date:      r.tarih ? new Date(r.tarih) : null,
+        _monthKey:  r.month_key,
+        _monthLabel: r.month_key ? (() => { const d = new Date(r.month_key + '-01'); return ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][d.getMonth()] + ' ' + d.getFullYear(); })() : '',
+        _platform:  r.platform,
+        _tur:       r.tur,
+        _kategori:  r.kategori,
+        _format:    r.format,
+        _ton:       r.ton,
+        _link:      r.link,
+        _account:   r.hesap,
+        _erisim:    r.erisim,
+        _izlenme:   r.izlenme,
+        _begeni:    r.begeni,
+        _yorum:     r.yorum,
+        _paylasim:  r.paylasim,
+        _kaydetme:  r.kaydetme,
+        _etkilesim: r.etkilesim,
+        _sure:      r.sure,
+        _er:        r.er,
+      };
+    });
+
+    return rawData.length > 0;
+  } catch(e) {
+    console.error('Supabase yükleme hatası:', e);
+    showToast('❌ Yükleme hatası: ' + (e.message || e));
+    return false;
+  }
+}
+
+function clearStorage() {
+  if (!confirm('Supabase\'deki tüm veriler silinecek. Emin misiniz?')) return;
+  sb.from('icerikler').delete().neq('id', '').then(({ error }) => {
+    if (error) { showToast('❌ Silme hatası'); return; }
+    rawData = []; filteredData = [];
+    updateDataStats();
+    showToast('🗑️ Tüm veriler silindi');
+  });
+}
+
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000) return (n/1000).toFixed(1)+'K';
+  return Math.round(n).toLocaleString('tr-TR');
+}
+function platClass(p) {
+  if (!p) return 'x';
+  const l = p.toLowerCase();
+  if (l.includes('insta')) return 'ig';
+  if (l.includes('face')) return 'fb';
+  if (l.includes('tik')) return 'tt';
+  if (l.includes('you')) return 'yt';
+  return 'x';
+}
+function erClass(er) { return er >= 5 ? 'er-high' : er >= 2 ? 'er-mid' : 'er-low'; }
+function groupBy(arr, fn) {
+  return arr.reduce((acc, r) => { const k = fn(r); (acc[k] = acc[k]||[]).push(r); return acc; }, {});
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(() => { t.className = 'toast hide'; }, 3000);
+}
+</script>
+</body>
+</html>
